@@ -7,66 +7,61 @@
 
 const double PI = atan(1) * 4;
 
-GLUquadricObj* quadratic;   //Necesario para dibujar cilindros con glu
+GLUquadricObj* quadratic;   //Needed to draw cylinders with glu
 GLuint _textureId;          //The OpenGL id of the texture
-int milisegundos = 20;      //Tiempo entre cada actualización de pantalla
-float angulomax = 50;       //Valor máximo para el ángulo
-float incrementomax = 6.5;  //Valor máximo para los incrementos de ángulo
-float angulo = -angulomax;  //La esfera izquierda iniciará suspendida con el mayor ángulo válido
-bool clockwise = false;     //y se trasladará en sentido counter-clockwise
 
-//Esferas
-int esferas = 5;            //Cantidad de esferas en total
-int semueven = 1;           //Cantidad de esferas que estarán en movimiento
-float esf_diam = 1.0;       //Diámetro de cada esfera
-float cuboamarrar = 0.125;   //Tamaño del cubo incrustado sobre cada esfera
+int milliseconds = 20;      //Time between each screen update
+float maxAngle = 50;        //Maximum value for angle
+float maxIncrement = 6.5;   //Maximum value for angle increments
+float angle = -maxAngle;    //The left sphere will start suspended with the largest valid angle
+bool clockwise = false;     //and it will move counter-clockwise
 
-//Base                      //Tamaño para la base de madera
-float base_tamX = 7.5;
-float base_tamY = 0.8;
-float base_tamZ = 5.5;
+//Spheres
+int spheres = 5;            //Number of spheres in total
+int movingSpheres = 1;      //Number of spheres that will be in motion
+float sphereDiameter = 1.0; //Diameter of each sphere
+float sphereCube = 0.125;   //Size of the cube embedded on each sphere
 
-float dist_esf_base = 1.0;  //Distancia entre las esferas y la base cuando el ángulo es 0
+//Base                      //Size for wooden base
+float baseX = 7.5;
+float baseY = 0.8;
+float baseZ = 5.5;
+float baseDistance = 1.0;   //Distance between spheres and base when angle is 0
 
-//Tubos
-float tub_radio = 0.125;    //Radio de cada cilindro
-GLint slices = 32;          //Cantidad de subdivisiones alrededor del eje z para dibujar cada cilindro
-GLint stacks = 32;          //Cantidad de subdivisiones a lo largo del eje z para dibujar cada cilindro
+//Pipes
+float pipeRadius = 0.125;   //Radius of each cylinder
+GLint slices = 32;          //Number of subdivisions around the z axis to draw each cylinder
+GLint stacks = 32;          //Number of subdivisions along the z axis to draw each cylinder
 
-float tub_tamX = 6.5;       // Tamaño de la cajeta rectangular 
-float tub_tamY = 5;      // formada por los tubos (incluyendo 
-float tub_tamZ = 4.5;       // el diámetro de cada tubo)
+float pipeX = 6.5;          //Rectangular box size
+float pipeY = 5;            //formed by the tubes
+float pipeZ = 4.5;          //(including the diameter of each tube)
 
-//El largo del hilo se calcula en base al tamaño de los tubos, 
-// el diámetro de las esferas y la distancia entre las esferas y la base
-float largo_hilo = tub_tamY - tub_radio - dist_esf_base - esf_diam - cuboamarrar / 2;
+//The length of the wire is calculated based on the size of the tubes,
+//the diameter of the spheres and the distance between the spheres and the base
+float wireLength = pipeY - pipeRadius - baseDistance - sphereDiameter - sphereCube / 2;
 
-//Camara
-float camposx = 0.0;
-float camposy = 0.5;
-float camposz = 15.0;
-float camrotx = 6.0;
-float camroty = 40.0;
-float camrotz = 0.0;
+//Camera
+float cameraX = 0.0;
+float cameraY = 0.5;
+float cameraZ = 15.0;
+float cameraRotationX = 6.0;
+float cameraRotationY = 40.0;
+float cameraRotationZ = 0.0;
 
-//Ejes
-bool dibujarEjes = false;
+//Axes
+bool drawAxes = true;
 
 //Menus
-static int menuPrincipal, menuTotalEsf, menuEnMovimiento;
+static int menuMain, menuTotalSpheres, menuInMovement;
 
 GLuint loadTexture(Image* image) {
 	GLuint textureId;
+
 	glGenTextures(1, &textureId);
 	glBindTexture(GL_TEXTURE_2D, textureId);
-	glTexImage2D(GL_TEXTURE_2D,
-		0,
-		GL_RGB,
-		image->width, image->height,
-		0,
-		GL_RGB,
-		GL_UNSIGNED_BYTE,
-		image->pixels);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image->width, image->height, 0, GL_RGB, GL_UNSIGNED_BYTE, image->pixels);
+
 	return textureId;
 }
 
@@ -79,6 +74,7 @@ void initRendering() {
 	glShadeModel(GL_SMOOTH);
 
 	quadratic = gluNewQuadric();
+
 	gluQuadricNormals(quadratic, GLU_SMOOTH);
 	gluQuadricTexture(quadratic, GL_TRUE);
 
@@ -87,11 +83,11 @@ void initRendering() {
 	delete image;
 }
 
-void posicionarCamara() {
-	glTranslatef(-camposx, -camposy, -camposz);
-	glRotatef(camrotx, 1.0, 0.0, 0.0);
-	glRotatef(camroty, 0.0, 1.0, 0.0);
-	glRotatef(camrotz, 0.0, 0.0, 1.0);
+void positionCamera() {
+	glTranslatef(-cameraX, -cameraY, -cameraZ);
+	glRotatef(cameraRotationX, 1.0, 0.0, 0.0);
+	glRotatef(cameraRotationY, 0.0, 1.0, 0.0);
+	glRotatef(cameraRotationZ, 0.0, 0.0, 1.0);
 }
 
 double toDeg(double radian) {
@@ -103,29 +99,31 @@ double toRad(double degree) {
 }
 
 int mediana(int n) {
-	//Encontrar la posición central para una secuencia de n números
-	if (n % 2 == 0)
+	//Find the center position for a sequence of numbers
+	if (n % 2 == 0) {
 		return n / 2;
-	else
+	}
+	else {
 		return (n + 1) / 2;
+	}
 }
 
-void trazarEjes(void) {
-	//Eje X - Rojo
+void traceAxes(void) {
+	//Axis X - Red
 	glColor3f(1.0, 0.0, 0.0);
 	glBegin(GL_LINES);
 	glVertex3f(-500.0, 0.0, 0.0);
 	glVertex3f(500.0, 0.0, 0.0);
 	glEnd();
 
-	//Eje Y - Verde
+	//Axis Y - Green
 	glColor3f(0.0, 1.0, 0.0);
 	glBegin(GL_LINES);
 	glVertex3f(0.0, -500.0, 0.0);
 	glVertex3f(0.0, 500.0, 0.0);
 	glEnd();
 
-	//Eje Z - Azul
+	//Axis Z - Blue
 	glColor3f(0.0, 0.0, 1.0);
 	glBegin(GL_LINES);
 	glVertex3f(0.0, 0.0, -500.0);
@@ -133,9 +131,9 @@ void trazarEjes(void) {
 	glEnd();
 }
 
-void dibujarBase() {
+void drawBase() {
 	glPushMatrix();
-	glTranslatef(0.0f, -(esf_diam / 2 + dist_esf_base + base_tamY / 2), 0.0f); //Centro Geométrico de la Base
+	glTranslatef(0.0f, -(sphereDiameter / 2 + baseDistance + baseY / 2), 0.0f); //Geometric Center
 
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, _textureId);
@@ -145,149 +143,151 @@ void dibujarBase() {
 	glColor3f(1.0f, 1.0f, 1.0f);
 
 	glBegin(GL_QUADS);
-	//Cara Superior
+	//Upper Face
 	glNormal3f(0.0, 1.0f, 0.0f);
-	glTexCoord2f(0.0f, 0.0f); glVertex3f(-base_tamX / 2, base_tamY / 2, base_tamZ / 2); //Bottom Left of Texture & Plane
-	glTexCoord2f(1.0f, 0.0f); glVertex3f(base_tamX / 2, base_tamY / 2, base_tamZ / 2); // Bottom Right of Texture & Plane
-	glTexCoord2f(1.0f, 1.0f); glVertex3f(base_tamX / 2, base_tamY / 2, -base_tamZ / 2); // Top Right of Texture & Plane
-	glTexCoord2f(0.0f, 1.0f); glVertex3f(-base_tamX / 2, base_tamY / 2, -base_tamZ / 2); // Top Left of Texture & Plane
-	//Cara Inferior
+	glTexCoord2f(0.0f, 0.0f); glVertex3f(-baseX / 2, baseY / 2, baseZ / 2);   //Bottom Left
+	glTexCoord2f(1.0f, 0.0f); glVertex3f(baseX / 2, baseY / 2, baseZ / 2);    //Bottom Right
+	glTexCoord2f(1.0f, 1.0f); glVertex3f(baseX / 2, baseY / 2, -baseZ / 2);   //Top Right
+	glTexCoord2f(0.0f, 1.0f); glVertex3f(-baseX / 2, baseY / 2, -baseZ / 2);  //Top Left
+	//Underside
 	glNormal3f(0.0, -1.0f, 0.0f);
-	glTexCoord2f(0.0f, 0.0f); glVertex3f(-base_tamX / 2, -base_tamY / 2, base_tamZ / 2);
-	glTexCoord2f(1.0f, 0.0f); glVertex3f(base_tamX / 2, -base_tamY / 2, base_tamZ / 2);
-	glTexCoord2f(1.0f, 1.0f); glVertex3f(base_tamX / 2, -base_tamY / 2, -base_tamZ / 2);
-	glTexCoord2f(0.0f, 1.0f); glVertex3f(-base_tamX / 2, -base_tamY / 2, -base_tamZ / 2);
-	//Cara Izq
+	glTexCoord2f(0.0f, 0.0f); glVertex3f(-baseX / 2, -baseY / 2, baseZ / 2);
+	glTexCoord2f(1.0f, 0.0f); glVertex3f(baseX / 2, -baseY / 2, baseZ / 2);
+	glTexCoord2f(1.0f, 1.0f); glVertex3f(baseX / 2, -baseY / 2, -baseZ / 2);
+	glTexCoord2f(0.0f, 1.0f); glVertex3f(-baseX / 2, -baseY / 2, -baseZ / 2);
+	//Left Face
 	glNormal3f(-1.0, 0.0f, 0.0f);
-	glTexCoord2f(0.0f, 0.0f); glVertex3f(-base_tamX / 2, -base_tamY / 2, -base_tamZ / 2);
-	glTexCoord2f(1.0f, 0.0f); glVertex3f(-base_tamX / 2, -base_tamY / 2, base_tamZ / 2);
-	glTexCoord2f(1.0f, 1.0f); glVertex3f(-base_tamX / 2, base_tamY / 2, base_tamZ / 2);
-	glTexCoord2f(0.0f, 1.0f); glVertex3f(-base_tamX / 2, base_tamY / 2, -base_tamZ / 2);
-	//Cara Der
+	glTexCoord2f(0.0f, 0.0f); glVertex3f(-baseX / 2, -baseY / 2, -baseZ / 2);
+	glTexCoord2f(1.0f, 0.0f); glVertex3f(-baseX / 2, -baseY / 2, baseZ / 2);
+	glTexCoord2f(1.0f, 1.0f); glVertex3f(-baseX / 2, baseY / 2, baseZ / 2);
+	glTexCoord2f(0.0f, 1.0f); glVertex3f(-baseX / 2, baseY / 2, -baseZ / 2);
+	//Right face
 	glNormal3f(-1.0, 0.0f, 0.0f);
-	glTexCoord2f(0.0f, 0.0f); glVertex3f(base_tamX / 2, -base_tamY / 2, -base_tamZ / 2);
-	glTexCoord2f(1.0f, 0.0f); glVertex3f(base_tamX / 2, -base_tamY / 2, base_tamZ / 2);
-	glTexCoord2f(1.0f, 1.0f); glVertex3f(base_tamX / 2, base_tamY / 2, base_tamZ / 2);
-	glTexCoord2f(0.0f, 1.0f); glVertex3f(base_tamX / 2, base_tamY / 2, -base_tamZ / 2);
-	//Cara Frontal
+	glTexCoord2f(0.0f, 0.0f); glVertex3f(baseX / 2, -baseY / 2, -baseZ / 2);
+	glTexCoord2f(1.0f, 0.0f); glVertex3f(baseX / 2, -baseY / 2, baseZ / 2);
+	glTexCoord2f(1.0f, 1.0f); glVertex3f(baseX / 2, baseY / 2, baseZ / 2);
+	glTexCoord2f(0.0f, 1.0f); glVertex3f(baseX / 2, baseY / 2, -baseZ / 2);
+	//Front Face
 	glNormal3f(0.0, 0.0f, 1.0f);
-	glTexCoord2f(0.0f, 0.0f); glVertex3f(-base_tamX / 2, -base_tamY / 2, base_tamZ / 2);
-	glTexCoord2f(1.0f, 0.0f); glVertex3f(base_tamX / 2, -base_tamY / 2, base_tamZ / 2);
-	glTexCoord2f(1.0f, 1.0f); glVertex3f(base_tamX / 2, base_tamY / 2, base_tamZ / 2);
-	glTexCoord2f(0.0f, 1.0f); glVertex3f(-base_tamX / 2, base_tamY / 2, base_tamZ / 2);
-	//Cara Posterior
+	glTexCoord2f(0.0f, 0.0f); glVertex3f(-baseX / 2, -baseY / 2, baseZ / 2);
+	glTexCoord2f(1.0f, 0.0f); glVertex3f(baseX / 2, -baseY / 2, baseZ / 2);
+	glTexCoord2f(1.0f, 1.0f); glVertex3f(baseX / 2, baseY / 2, baseZ / 2);
+	glTexCoord2f(0.0f, 1.0f); glVertex3f(-baseX / 2, baseY / 2, baseZ / 2);
+	//Upper side
 	glNormal3f(0.0, 0.0f, 1.0f);
-	glTexCoord2f(0.0f, 0.0f); glVertex3f(-base_tamX / 2, -base_tamY / 2, -base_tamZ / 2);
-	glTexCoord2f(1.0f, 0.0f); glVertex3f(base_tamX / 2, -base_tamY / 2, -base_tamZ / 2);
-	glTexCoord2f(1.0f, 1.0f); glVertex3f(base_tamX / 2, base_tamY / 2, -base_tamZ / 2);
-	glTexCoord2f(0.0f, 1.0f); glVertex3f(-base_tamX / 2, base_tamY / 2, -base_tamZ / 2);
+	glTexCoord2f(0.0f, 0.0f); glVertex3f(-baseX / 2, -baseY / 2, -baseZ / 2);
+	glTexCoord2f(1.0f, 0.0f); glVertex3f(baseX / 2, -baseY / 2, -baseZ / 2);
+	glTexCoord2f(1.0f, 1.0f); glVertex3f(baseX / 2, baseY / 2, -baseZ / 2);
+	glTexCoord2f(0.0f, 1.0f); glVertex3f(-baseX / 2, baseY / 2, -baseZ / 2);
 	glEnd();
 
 	glDisable(GL_TEXTURE_2D);
 	glPopMatrix();
 }
 
-void dibujarTubos() {
+void drawPipes() {
 	glPushMatrix();
-	glTranslatef(0.0f, tub_tamY / 2 - esf_diam / 2 - dist_esf_base, 0.0f); //Centro Geométrico
+	glTranslatef(0.0f, pipeY / 2 - sphereDiameter / 2 - baseDistance, 0.0f); //Geometric Center
 
 	glColor3f(0.69f, 0.69f, 0.69f);
 
-	//Iluminación
+	//Lighting
 	GLfloat mat_ambient[] = { 0.0, 0.0, 0.0, 0.0 };
 	GLfloat mat_diffuse[] = { 0.5, 0.5, 0.5, 1.0 };
 	GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
 	GLfloat mat_shininess[] = { 300.0 };
+
 	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
 	glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
 
-	//Superior Delantero
+	//Superior Front
 	glPushMatrix();
-	glTranslatef(-tub_tamX / 2, tub_tamY / 2 - tub_radio, tub_tamZ / 2 - tub_radio);
+	glTranslatef(-pipeX / 2, pipeY / 2 - pipeRadius, pipeZ / 2 - pipeRadius);
 	glRotatef(90.0f, 0.0f, 1.0f, 0.0f);
-	gluCylinder(quadratic, tub_radio, tub_radio, tub_tamX, slices, stacks);
+	gluCylinder(quadratic, pipeRadius, pipeRadius, pipeX, slices, stacks);
 	glPopMatrix();
 
-	//Superior Posterior
+	//Upper Rear
 	glPushMatrix();
-	glTranslatef(-tub_tamX / 2, tub_tamY / 2 - tub_radio, -(tub_tamZ / 2 - tub_radio));
+	glTranslatef(-pipeX / 2, pipeY / 2 - pipeRadius, -(pipeZ / 2 - pipeRadius));
 	glRotatef(90.0f, 0.0f, 1.0f, 0.0f);
-	gluCylinder(quadratic, tub_radio, tub_radio, tub_tamX, slices, stacks);
+	gluCylinder(quadratic, pipeRadius, pipeRadius, pipeX, slices, stacks);
 	glPopMatrix();
 
-	//Izquierdo Delantero
+	//Left Forward
 	glPushMatrix();
-	glTranslatef(-(tub_tamX / 2 - tub_radio), tub_tamY / 2 - tub_radio, tub_tamZ / 2 - tub_radio);
+	glTranslatef(-(pipeX / 2 - pipeRadius), pipeY / 2 - pipeRadius, pipeZ / 2 - pipeRadius);
 	glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-	gluCylinder(quadratic, tub_radio, tub_radio, tub_tamY - tub_radio, slices, stacks);
+	gluCylinder(quadratic, pipeRadius, pipeRadius, pipeY - pipeRadius, slices, stacks);
 	glPopMatrix();
 
-	//Izquierdo Posterior
+	//Left Rear
 	glPushMatrix();
-	glTranslatef(-(tub_tamX / 2 - tub_radio), tub_tamY / 2 - tub_radio, -(tub_tamZ / 2 - tub_radio));
+	glTranslatef(-(pipeX / 2 - pipeRadius), pipeY / 2 - pipeRadius, -(pipeZ / 2 - pipeRadius));
 	glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-	gluCylinder(quadratic, tub_radio, tub_radio, tub_tamY - tub_radio, slices, stacks);
+	gluCylinder(quadratic, pipeRadius, pipeRadius, pipeY - pipeRadius, slices, stacks);
 	glPopMatrix();
 
-	//Derecho Delantero
+	//Right Forward
 	glPushMatrix();
-	glTranslatef((tub_tamX / 2 - tub_radio), tub_tamY / 2 - tub_radio, tub_tamZ / 2 - tub_radio);
+	glTranslatef((pipeX / 2 - pipeRadius), pipeY / 2 - pipeRadius, pipeZ / 2 - pipeRadius);
 	glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-	gluCylinder(quadratic, tub_radio, tub_radio, tub_tamY - tub_radio, slices, stacks);
+	gluCylinder(quadratic, pipeRadius, pipeRadius, pipeY - pipeRadius, slices, stacks);
 	glPopMatrix();
 
-	//Derecho Posterior
+	//Rear Right
 	glPushMatrix();
-	glTranslatef((tub_tamX / 2 - tub_radio), tub_tamY / 2 - tub_radio, -(tub_tamZ / 2 - tub_radio));
+	glTranslatef((pipeX / 2 - pipeRadius), pipeY / 2 - pipeRadius, -(pipeZ / 2 - pipeRadius));
 	glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-	gluCylinder(quadratic, tub_radio, tub_radio, tub_tamY - tub_radio, slices, stacks);
+	gluCylinder(quadratic, pipeRadius, pipeRadius, pipeY - pipeRadius, slices, stacks);
 	glPopMatrix();
 
 	glPopMatrix();
 }
 
-void esferaAmarrada(float angulo) {
+void drawSphere(float angle) {
 	glPushMatrix();
 
-	glRotatef(angulo, 0.0f, 0.0f, 1.0f);
-	glTranslatef(0.0f, -largo_hilo, 0.0f);
+	glRotatef(angle, 0.0f, 0.0f, 1.0f);
+	glTranslatef(0.0f, -wireLength, 0.0f);
 
 	glColor3f(0.8, 0.8, 0.8);
 
-	//Iluminación
+	//Lighting
 	GLfloat mat_ambient[] = { 0.0, 0.0, 0.0, 0.0 };
 	GLfloat mat_diffuse[] = { 0.5, 0.5, 0.5, 1.0 };
 	GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
 	GLfloat mat_shininess[] = { 300.0 };
+
 	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
 	glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
 
-	//Dibujar Cubo Para Amarrar
-	glutSolidCube(cuboamarrar);
+	//Draw cube
+	glutSolidCube(sphereCube);
 
-	//Dibujar Esfera
+	//Draw sphere
 	glPushMatrix();
-	glTranslatef(0.0f, -(esf_diam / 2), 0.0f);
-	glutSolidSphere(esf_diam / 2, 20, 20);
+	glTranslatef(0.0f, -(sphereDiameter / 2), 0.0f);
+	glutSolidSphere(sphereDiameter / 2, 20, 20);
 	glPopMatrix();
 
-	glRotatef(-angulo, 0.0f, 0.0f, 1.0f);
+	glRotatef(-angle, 0.0f, 0.0f, 1.0f);
 
-	//Dibujar hilos
-	float distX = sin(toRad(angulo)) * largo_hilo;
-	float distY = cos(toRad(angulo)) * largo_hilo;
-	float distZ = tub_tamZ / 2 - tub_radio;
+	//Draw wires
+	float distX = sin(toRad(angle)) * wireLength;
+	float distY = cos(toRad(angle)) * wireLength;
+	float distZ = pipeZ / 2 - pipeRadius;
 
 	glColor3f(0.72f, 0.54f, 0.0f);
 	glBegin(GL_LINES);
-	//Hacia tubo posterior
+	//Towards back pipe
 	glVertex3f(0.0f, 0.0f, 0.0f);
 	glVertex3f(-distX, distY, -distZ);
-	//Hacia tubo frontal
+	//To head pipe
 	glVertex3f(0.0f, 0.0f, 0.0f);
 	glVertex3f(-distX, distY, distZ);
 	glEnd();
@@ -295,19 +295,24 @@ void esferaAmarrada(float angulo) {
 	glPopMatrix();
 }
 
-void dibujarEsferas() {
+void drawSpheres() {
 	glPushMatrix();
-	glTranslatef(0.0f, tub_tamY - tub_radio - dist_esf_base - esf_diam / 2, 0.0f); //Altura de los tubos
+	glTranslatef(0.0f, pipeY - pipeRadius - baseDistance - sphereDiameter / 2, 0.0f); //Pipe height
 
-	for (int i = 1; i <= esferas; i++) {
+	for (int i = 1; i <= spheres; i++) {
 		glPushMatrix();
-		glTranslatef(-esferas / 2.0f - esf_diam / 2.0f + i * esf_diam, 0.0f, 0.0f); //Centro en X
-		if (i <= semueven && angulo < 0)
-			esferaAmarrada(angulo);
-		else if (i > esferas - semueven && angulo > 0)
-			esferaAmarrada(angulo);
-		else
-			esferaAmarrada(0);
+		glTranslatef(-spheres / 2.0f - sphereDiameter / 2.0f + i * sphereDiameter, 0.0f, 0.0f); //Center in X
+
+		if (i <= movingSpheres && angle < 0) {
+			drawSphere(angle);
+		}
+		else if (i > spheres - movingSpheres && angle > 0) {
+			drawSphere(angle);
+		}
+		else {
+			drawSphere(0);
+		}
+
 		glPopMatrix();
 	}
 
@@ -315,110 +320,109 @@ void dibujarEsferas() {
 }
 
 void drawScene() {
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f); //fondo negro
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f); //Black background
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	/** Iluminación **/
+	//Lighting
 	GLfloat ambientLight[] = { 0.1f, 0.1f, 0.1f, 1.0f };
 	GLfloat diffuseLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	GLfloat specularLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	GLfloat lightPos[] = { -camposx + tub_tamX, -camposy + tub_tamY, -camposz + tub_tamZ, 1.0f };
+	GLfloat lightPos[] = { -cameraX + pipeX, -cameraY + pipeY, -cameraZ + pipeZ, 1.0f };
+
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 	glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
 	glLightfv(GL_LIGHT0, GL_SPECULAR, specularLight);
 
-	/** Viewing **/
-	posicionarCamara();
+	positionCamera();
 
-	/** Modeling **/
-	if (dibujarEjes)
-		trazarEjes();
-	dibujarBase();
-	dibujarTubos();
-	dibujarEsferas();
+	if (drawAxes)
+		traceAxes();
+
+	drawBase();
+	drawPipes();
+	drawSpheres();
 
 	glutSwapBuffers();
 }
 
 void update(int value) {
-	float incremento = incrementomax - abs(angulo) / angulomax * incrementomax * 0.85;
+	float incremento = maxIncrement - abs(angle) / maxAngle * maxIncrement * 0.85;
 
-	if (clockwise and angulo <= -angulomax) {
+	if (clockwise and angle <= -maxAngle) {
 		clockwise = false;
 	}
-	else if (!clockwise and angulo >= angulomax) {
+	else if (!clockwise and angle >= maxAngle) {
 		clockwise = true;
 	}
 
 	if (clockwise)
-		angulo -= incremento;
+		angle -= incremento;
 	else
-		angulo += incremento;
+		angle += incremento;
 
 	glutPostRedisplay();
-	glutTimerFunc(milisegundos, update, 0);
+	glutTimerFunc(milliseconds, update, 0);
 }
 
 void handleSpecialKeys(int key, int x, int y) {
 	int inc = 2.0;
+
 	switch (key) {
-	case GLUT_KEY_RIGHT:
-		camroty += inc;
-		glutPostRedisplay();
-		break;
-
-	case GLUT_KEY_LEFT:
-		camroty -= inc;
-		glutPostRedisplay();
-		break;
-
-	case GLUT_KEY_UP:
-		camrotx -= inc;
-		glutPostRedisplay();
-		break;
-
-	case GLUT_KEY_DOWN:
-		camrotx += inc;
-		glutPostRedisplay();
-		break;
+		case GLUT_KEY_RIGHT:
+			cameraRotationY += inc;
+			glutPostRedisplay();
+			break;
+		case GLUT_KEY_LEFT:
+			cameraRotationY -= inc;
+			glutPostRedisplay();
+			break;
+		case GLUT_KEY_UP:
+			cameraRotationX -= inc;
+			glutPostRedisplay();
+			break;
+		case GLUT_KEY_DOWN:
+			cameraRotationX += inc;
+			glutPostRedisplay();
+			break;
 	}
 }
 
 void handleResize(int w, int h) {
-	/** Projection **/
+	//Projection
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	gluPerspective(45.0, (float)w / (float)h, 1.0, 200.0);
 
-	/** ViewPort **/
+	//ViewPort
 	glViewport(0, 0, w, h);
 }
 
-void handleMenuPrincipal(int m) {
+void handleMenuMain(int m) {
 	switch (m) {
-	case 0:
-		exit(0);
-	case 1:
-		dibujarEjes = !dibujarEjes;
+		case 0:
+			exit(0);
+		case 1:
+			drawAxes = !drawAxes;
 	}
 }
 
-void handleMenuTotalEsf(int m) {
-	esferas = m - 10;
+void handleMenuTotalSpheres(int m) {
+	spheres = m - 10;
 	glutPostRedisplay();
 }
 
-void handleMenuEnMovimiento(int m) {
-	semueven = m - 20;
+void handleMenuInMotion(int m) {
+	movingSpheres = m - 20;
 	glutPostRedisplay();
 }
 
-void prepararMenu() {
-	menuTotalEsf = glutCreateMenu(handleMenuTotalEsf);
+void generateMenu() {
+	menuTotalSpheres = glutCreateMenu(handleMenuTotalSpheres);
+
 	glutAddMenuEntry("1", 11);
 	glutAddMenuEntry("2", 12);
 	glutAddMenuEntry("3", 13);
@@ -427,7 +431,8 @@ void prepararMenu() {
 	glutAddMenuEntry("6", 16);
 	glutAddMenuEntry("7", 17);
 
-	menuEnMovimiento = glutCreateMenu(handleMenuEnMovimiento);
+	menuInMovement = glutCreateMenu(handleMenuInMotion);
+
 	glutAddMenuEntry("1", 21);
 	glutAddMenuEntry("2", 22);
 	glutAddMenuEntry("3", 23);
@@ -436,11 +441,13 @@ void prepararMenu() {
 	glutAddMenuEntry("6", 26);
 	glutAddMenuEntry("7", 27);
 
-	menuPrincipal = glutCreateMenu(handleMenuPrincipal);
-	glutAddSubMenu("Total de Esferas", menuTotalEsf);
-	glutAddSubMenu("En Movimiento", menuEnMovimiento);
-	glutAddMenuEntry("Mostrar Ejes", 1);
-	glutAddMenuEntry("Salir", 0);
+	menuMain = glutCreateMenu(handleMenuMain);
+
+	glutAddSubMenu("Total spheres", menuTotalSpheres);
+	glutAddSubMenu("Total in movement", menuInMovement);
+	glutAddMenuEntry("Show Axes", 1);
+	glutAddMenuEntry("Leave", 0);
+
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
 
@@ -449,14 +456,14 @@ int main(int argc, char** argv) {
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
 	glutInitWindowSize(800, 600);
 
-	glutCreateWindow("Péndulo de Newton");
+	glutCreateWindow("Newton's cradle");
 	initRendering();
-	prepararMenu();
+	generateMenu();
 
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(handleResize);
 	glutSpecialFunc(handleSpecialKeys);
-	glutTimerFunc(milisegundos, update, 0);
+	glutTimerFunc(milliseconds, update, 0);
 
 	glutMainLoop();
 	return 0;
