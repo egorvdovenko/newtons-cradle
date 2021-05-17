@@ -350,19 +350,21 @@ void drawScene() {
 }
 
 void update(int value) {
-	float incremento = maxIncrement - abs(angle) / maxAngle * maxIncrement * 0.85;
+	float increment = maxIncrement - abs(angle) / maxAngle * maxIncrement * 0.85;
 
-	if (clockwise and angle <= -maxAngle) {
+	if (clockwise && angle <= -maxAngle) {
 		clockwise = false;
 	}
-	else if (!clockwise and angle >= maxAngle) {
+	else if (!clockwise && angle >= maxAngle) {
 		clockwise = true;
 	}
 
-	if (clockwise)
-		angle -= incremento;
-	else
-		angle += incremento;
+	if (clockwise) {
+		angle -= increment;
+	}
+	else {
+		angle += increment;
+	}
 
 	glutPostRedisplay();
 	glutTimerFunc(milliseconds, update, 0);
