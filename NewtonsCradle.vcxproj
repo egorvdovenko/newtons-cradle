@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{f9f6c887-c694-4997-aa7e-550c042c8329}</ProjectGuid>
-    <RootNamespace>Test</RootNamespace>
+    <ProjectGuid>{1a180b9f-d752-44c9-a4be-e458ce7eb9df}</ProjectGuid>
+    <RootNamespace>NewtonsCradle</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -140,14 +140,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include=".gitignore" />
+  </ItemGroup>
+  <ItemGroup>
     <ClCompile Include="imageloader.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="madera.bmp" />
+    <ClInclude Include="imageloader.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="imageloader.h" />
+    <Image Include="wood.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
