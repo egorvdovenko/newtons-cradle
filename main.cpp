@@ -9,31 +9,24 @@
 GLUquadricObj* gobj;
 GLuint woodTextureId;
 
-int millis = 20;            //Time between each screen update
-float maxAngle = 50;        //Maximum value for angle
-float maxIncrement = 6.5;   //Maximum value for angle increments
-float angle = -maxAngle;    //The left sphere will start suspended with the largest valid angle
-bool clockwise = false;     //and it will move counter-clockwise
+float angle = -50;
+float maxAngle = 50;        
+float maxIncrement = 6.5;   
+bool clockwise = false;
 
-int spheres = 5;            //Number of spheres in total
-int movingSpheres = 1;      //Number of spheres that will be in motion
-float sphereDiameter = 1.0; //Diameter of each sphere
-float sphereCube = 0.125;   //Size of the cube embedded on each sphere
+float sphereDiameter = 1.0;
+float sphereCube = 0.125;
 
 float baseX = 7.5;
 float baseY = 0.8;
 float baseZ = 5.5;
-float baseDistance = 1.0;   //Distance between spheres and base when angle is 0
+float baseDistance = 1.0;
 
-GLint pipeSlices = 32;          
-GLint pipeStacks = 32;          
-float pipeRadius = 0.125;   
-float pipeX = 6.5;          
-float pipeY = 5;            
-float pipeZ = 4.5;         
+float pipeRadius = 0.125;
+float pipeX = 6.5;
+float pipeY = 5.0;
+float pipeZ = 4.5;
 
-//The length of the wire is calculated based on the size of the tubes,
-//the diameter of the spheres and the distance between the spheres and the base
 float wireLength = pipeY - pipeRadius - baseDistance - sphereDiameter - sphereCube / 2;
 
 float cameraX = 0.0;
@@ -61,21 +54,23 @@ void drawSphere(float angle) {
 
 	glColor3f(0.675f, 0.675f, 0.750f);
 
-	GLfloat mat_ambient[] = { 0.0, 0.0, 0.0, 0.0 };
-	GLfloat mat_diffuse[] = { 0.5, 0.5, 0.5, 1.0 };
-	GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
-	GLfloat mat_shininess[] = { 300.0 };
+	GLfloat ambient[] = { 0.0, 0.0, 0.0, 0.0 };
+	GLfloat diffuse[] = { 0.5, 0.5, 0.5, 1.0 };
+	GLfloat specular[] = { 1.0, 1.0, 1.0, 1.0 };
+	GLfloat shininess[] = { 300.0 };
 
-	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
-	glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
+	glMaterialfv(GL_FRONT, GL_SHININESS, shininess);
 
 	glutSolidCube(sphereCube);
 
 	glPushMatrix();
+
 	glTranslatef(0.0f, -(sphereDiameter / 2), 0.0f);
 	glutSolidSphere(sphereDiameter / 2, 20, 20);
+
 	glPopMatrix();
 
 	glRotatef(-angle, 0.0f, 0.0f, 1.0f);
@@ -99,16 +94,13 @@ void drawSphere(float angle) {
 
 void drawSpheres() {
 	glPushMatrix();
-	glTranslatef(0.0f, pipeY - pipeRadius - baseDistance - sphereDiameter / 2, 0.0f);
+	glTranslatef(0.0f, pipeY - pipeRadius - baseDistance - sphereDiameter / 2.0f, 0.0f);
 
-	for (int i = 1; i <= spheres; i++) {
+	for (int i = 1; i <= 5; i++) {
 		glPushMatrix();
-		glTranslatef(-spheres / 2.0f - sphereDiameter / 2.0f + i * sphereDiameter, 0.0f, 0.0f);
+		glTranslatef(-5 / 2.0f - sphereDiameter / 2.0f + i * sphereDiameter, 0.0f, 0.0f);
 
-		if (i <= movingSpheres && angle < 0) {
-			drawSphere(angle);
-		}
-		else if (i > spheres - movingSpheres && angle > 0) {
+		if (i == 1 && angle < 0 || i == 5 && angle > 0) {
 			drawSphere(angle);
 		}
 		else {
@@ -127,56 +119,56 @@ void drawPipes() {
 
 	glColor3f(0.675f, 0.675f, 0.750f);
 
-	GLfloat mat_ambient[] = { 0.0, 0.0, 0.0, 0.0 };
-	GLfloat mat_diffuse[] = { 0.5, 0.5, 0.5, 1.0 };
-	GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
-	GLfloat mat_shininess[] = { 300.0 };
+	GLfloat ambient[] = { 0.0, 0.0, 0.0, 0.0 };
+	GLfloat diffuse[] = { 0.5, 0.5, 0.5, 1.0 };
+	GLfloat specular[] = { 1.0, 1.0, 1.0, 1.0 };
+	GLfloat shininess[] = { 300.0 };
 
-	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
-	glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
+	glMaterialfv(GL_FRONT, GL_SHININESS, shininess);
 
 	//Top Front
 	glPushMatrix();
 	glTranslatef(-pipeX / 2, pipeY / 2 - pipeRadius, pipeZ / 2 - pipeRadius);
 	glRotatef(90.0f, 0.0f, 1.0f, 0.0f);
-	gluCylinder(gobj, pipeRadius, pipeRadius, pipeX, pipeSlices, pipeStacks);
+	gluCylinder(gobj, pipeRadius, pipeRadius, pipeX, 32, 32);
 	glPopMatrix();
 
 	//Top Rear
 	glPushMatrix();
 	glTranslatef(-pipeX / 2, pipeY / 2 - pipeRadius, -(pipeZ / 2 - pipeRadius));
 	glRotatef(90.0f, 0.0f, 1.0f, 0.0f);
-	gluCylinder(gobj, pipeRadius, pipeRadius, pipeX, pipeSlices, pipeStacks);
+	gluCylinder(gobj, pipeRadius, pipeRadius, pipeX, 32, 32);
 	glPopMatrix();
 
 	//Left Front
 	glPushMatrix();
 	glTranslatef(-(pipeX / 2 - pipeRadius), pipeY / 2 - pipeRadius, pipeZ / 2 - pipeRadius);
 	glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-	gluCylinder(gobj, pipeRadius, pipeRadius, (pipeY - pipeRadius), pipeSlices, pipeStacks);
+	gluCylinder(gobj, pipeRadius, pipeRadius, GLfloat(pipeY - pipeRadius), 32, 32);
 	glPopMatrix();
 
 	//Left Rear
 	glPushMatrix();
 	glTranslatef(-(pipeX / 2 - pipeRadius), pipeY / 2 - pipeRadius, -(pipeZ / 2 - pipeRadius));
 	glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-	gluCylinder(gobj, pipeRadius, pipeRadius, (pipeY - pipeRadius), pipeSlices, pipeStacks);
+	gluCylinder(gobj, pipeRadius, pipeRadius, GLfloat(pipeY - pipeRadius), 32, 32);
 	glPopMatrix();
 
 	//Right Front
 	glPushMatrix();
 	glTranslatef((pipeX / 2 - pipeRadius), pipeY / 2 - pipeRadius, pipeZ / 2 - pipeRadius);
 	glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-	gluCylinder(gobj, pipeRadius, pipeRadius, (pipeY - pipeRadius), pipeSlices, pipeStacks);
+	gluCylinder(gobj, pipeRadius, pipeRadius, GLfloat(pipeY - pipeRadius), 32, 32);
 	glPopMatrix();
 
 	//Right Rear
 	glPushMatrix();
 	glTranslatef((pipeX / 2 - pipeRadius), pipeY / 2 - pipeRadius, -(pipeZ / 2 - pipeRadius));
 	glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-	gluCylinder(gobj, pipeRadius, pipeRadius, (pipeY - pipeRadius), pipeSlices, pipeStacks);
+	gluCylinder(gobj, pipeRadius, pipeRadius, GLfloat(pipeY - pipeRadius), 32, 32);
 	glPopMatrix();
 
 	glPopMatrix();
@@ -222,14 +214,14 @@ void drawBase() {
 	glTexCoord2f(1.0f, 0.0f); glVertex3f(baseX / 2, -baseY / 2, baseZ / 2);
 	glTexCoord2f(1.0f, 1.0f); glVertex3f(baseX / 2, baseY / 2, baseZ / 2);
 	glTexCoord2f(0.0f, 1.0f); glVertex3f(baseX / 2, baseY / 2, -baseZ / 2);
-	
+
 	//Front
 	glNormal3f(0.0, 0.0f, 1.0f);
 	glTexCoord2f(0.0f, 0.0f); glVertex3f(-baseX / 2, -baseY / 2, baseZ / 2);
 	glTexCoord2f(1.0f, 0.0f); glVertex3f(baseX / 2, -baseY / 2, baseZ / 2);
 	glTexCoord2f(1.0f, 1.0f); glVertex3f(baseX / 2, baseY / 2, baseZ / 2);
 	glTexCoord2f(0.0f, 1.0f); glVertex3f(-baseX / 2, baseY / 2, baseZ / 2);
-	
+
 	//Rear
 	glNormal3f(0.0, 0.0f, 1.0f);
 	glTexCoord2f(0.0f, 0.0f); glVertex3f(-baseX / 2, -baseY / 2, -baseZ / 2);
@@ -318,7 +310,7 @@ void timerFunc(int value) {
 		: angle += increment;
 
 	glutPostRedisplay();
-	glutTimerFunc(millis, timerFunc, 0);
+	glutTimerFunc(20, timerFunc, 0);
 }
 
 int main(int argc, char** argv) {
@@ -346,7 +338,7 @@ int main(int argc, char** argv) {
 	glutDisplayFunc(displayFunc);
 	glutReshapeFunc(reshapeFunc);
 	glutSpecialFunc(specialFunc);
-	glutTimerFunc(millis, timerFunc, 0);
+	glutTimerFunc(20, timerFunc, 0);
 
 	glutMainLoop();
 
