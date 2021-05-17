@@ -1,13 +1,13 @@
+#define _USE_MATH_DEFINES
+
 #include <iostream>
 #include <math.h>
 #include <stdlib.h>
 #include <GL/glut.h>
 #include "imageloader.h"
 
-const double PI = atan(1) * 4;
-
-GLUquadricObj* quadratic;  //Needed to draw cylinders with glu
-GLuint textureId;          //The OpenGL id of the texture
+GLUquadricObj* gobj;
+GLuint woodTextureId;
 
 int millis = 20;            //Time between each screen update
 float maxAngle = 50;        //Maximum value for angle
@@ -15,31 +15,27 @@ float maxIncrement = 6.5;   //Maximum value for angle increments
 float angle = -maxAngle;    //The left sphere will start suspended with the largest valid angle
 bool clockwise = false;     //and it will move counter-clockwise
 
-//Spheres
 int spheres = 5;            //Number of spheres in total
 int movingSpheres = 1;      //Number of spheres that will be in motion
 float sphereDiameter = 1.0; //Diameter of each sphere
 float sphereCube = 0.125;   //Size of the cube embedded on each sphere
 
-//Base                      //Size for wooden base
 float baseX = 7.5;
 float baseY = 0.8;
 float baseZ = 5.5;
 float baseDistance = 1.0;   //Distance between spheres and base when angle is 0
 
-//Pipes
-GLint pipeSlices = 32;          //Number of subdivisions around the z axis to draw each cylinder
-GLint pipeStacks = 32;          //Number of subdivisions along the z axis to draw each cylinder
-float pipeRadius = 0.125;   //Radius of each cylinder
-float pipeX = 6.5;          //Rectangular box size
-float pipeY = 5;            //formed by the tubes
-float pipeZ = 4.5;          //(including the diameter of each tube)
+GLint pipeSlices = 32;          
+GLint pipeStacks = 32;          
+float pipeRadius = 0.125;   
+float pipeX = 6.5;          
+float pipeY = 5;            
+float pipeZ = 4.5;         
 
 //The length of the wire is calculated based on the size of the tubes,
 //the diameter of the spheres and the distance between the spheres and the base
 float wireLength = pipeY - pipeRadius - baseDistance - sphereDiameter - sphereCube / 2;
 
-//Camera
 float cameraX = 0.0;
 float cameraY = 0.5;
 float cameraZ = 15.0;
@@ -48,13 +44,13 @@ float cameraRotationY = 40.0;
 float cameraRotationZ = 0.0;
 
 GLuint loadTexture(Image* image) {
-	GLuint textureId;
+	GLuint woodTextureId;
 
-	glGenTextures(1, &textureId);
-	glBindTexture(GL_TEXTURE_2D, textureId);
+	glGenTextures(1, &woodTextureId);
+	glBindTexture(GL_TEXTURE_2D, woodTextureId);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image->width, image->height, 0, GL_RGB, GL_UNSIGNED_BYTE, image->pixels);
 
-	return textureId;
+	return woodTextureId;
 }
 
 void drawSphere(float angle) {
@@ -63,7 +59,7 @@ void drawSphere(float angle) {
 	glRotatef(angle, 0.0f, 0.0f, 1.0f);
 	glTranslatef(0.0f, -wireLength, 0.0f);
 
-	glColor3f(0.8, 0.8, 0.8);
+	glColor3f(0.675f, 0.675f, 0.750f);
 
 	GLfloat mat_ambient[] = { 0.0, 0.0, 0.0, 0.0 };
 	GLfloat mat_diffuse[] = { 0.5, 0.5, 0.5, 1.0 };
@@ -84,18 +80,18 @@ void drawSphere(float angle) {
 
 	glRotatef(-angle, 0.0f, 0.0f, 1.0f);
 
-	float distX = sin(angle * PI / 180) * wireLength;
-	float distY = cos(angle * PI / 180) * wireLength;
-	float distZ = pipeZ / 2 - pipeRadius;
+	float x = sin(angle * M_PI / 180) * wireLength;
+	float y = cos(angle * M_PI / 180) * wireLength;
+	float z = pipeZ / 2 - pipeRadius;
 
 	glColor3f(0.72f, 0.54f, 0.0f);
 	glBegin(GL_LINES);
 
 	glVertex3f(0.0f, 0.0f, 0.0f);
-	glVertex3f(-distX, distY, -distZ);
+	glVertex3f(-x, y, -z);
 
 	glVertex3f(0.0f, 0.0f, 0.0f);
-	glVertex3f(-distX, distY, distZ);
+	glVertex3f(-x, y, z);
 	glEnd();
 
 	glPopMatrix();
@@ -129,7 +125,7 @@ void drawPipes() {
 	glPushMatrix();
 	glTranslatef(0.0f, pipeY / 2 - sphereDiameter / 2 - baseDistance, 0.0f);
 
-	glColor3f(0.69f, 0.69f, 0.69f);
+	glColor3f(0.675f, 0.675f, 0.750f);
 
 	GLfloat mat_ambient[] = { 0.0, 0.0, 0.0, 0.0 };
 	GLfloat mat_diffuse[] = { 0.5, 0.5, 0.5, 1.0 };
@@ -141,46 +137,46 @@ void drawPipes() {
 	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
 	glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
 
-	//Superior Front
+	//Top Front
 	glPushMatrix();
 	glTranslatef(-pipeX / 2, pipeY / 2 - pipeRadius, pipeZ / 2 - pipeRadius);
 	glRotatef(90.0f, 0.0f, 1.0f, 0.0f);
-	gluCylinder(quadratic, pipeRadius, pipeRadius, pipeX, pipeSlices, pipeStacks);
+	gluCylinder(gobj, pipeRadius, pipeRadius, pipeX, pipeSlices, pipeStacks);
 	glPopMatrix();
 
-	//Upper Rear
+	//Top Rear
 	glPushMatrix();
 	glTranslatef(-pipeX / 2, pipeY / 2 - pipeRadius, -(pipeZ / 2 - pipeRadius));
 	glRotatef(90.0f, 0.0f, 1.0f, 0.0f);
-	gluCylinder(quadratic, pipeRadius, pipeRadius, pipeX, pipeSlices, pipeStacks);
+	gluCylinder(gobj, pipeRadius, pipeRadius, pipeX, pipeSlices, pipeStacks);
 	glPopMatrix();
 
-	//Left Forward
+	//Left Front
 	glPushMatrix();
 	glTranslatef(-(pipeX / 2 - pipeRadius), pipeY / 2 - pipeRadius, pipeZ / 2 - pipeRadius);
 	glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-	gluCylinder(quadratic, pipeRadius, pipeRadius, pipeY - pipeRadius, pipeSlices, pipeStacks);
+	gluCylinder(gobj, pipeRadius, pipeRadius, (pipeY - pipeRadius), pipeSlices, pipeStacks);
 	glPopMatrix();
 
 	//Left Rear
 	glPushMatrix();
 	glTranslatef(-(pipeX / 2 - pipeRadius), pipeY / 2 - pipeRadius, -(pipeZ / 2 - pipeRadius));
 	glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-	gluCylinder(quadratic, pipeRadius, pipeRadius, pipeY - pipeRadius, pipeSlices, pipeStacks);
+	gluCylinder(gobj, pipeRadius, pipeRadius, (pipeY - pipeRadius), pipeSlices, pipeStacks);
 	glPopMatrix();
 
-	//Right Forward
+	//Right Front
 	glPushMatrix();
 	glTranslatef((pipeX / 2 - pipeRadius), pipeY / 2 - pipeRadius, pipeZ / 2 - pipeRadius);
 	glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-	gluCylinder(quadratic, pipeRadius, pipeRadius, pipeY - pipeRadius, pipeSlices, pipeStacks);
+	gluCylinder(gobj, pipeRadius, pipeRadius, (pipeY - pipeRadius), pipeSlices, pipeStacks);
 	glPopMatrix();
 
-	//Rear Right
+	//Right Rear
 	glPushMatrix();
 	glTranslatef((pipeX / 2 - pipeRadius), pipeY / 2 - pipeRadius, -(pipeZ / 2 - pipeRadius));
 	glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-	gluCylinder(quadratic, pipeRadius, pipeRadius, pipeY - pipeRadius, pipeSlices, pipeStacks);
+	gluCylinder(gobj, pipeRadius, pipeRadius, (pipeY - pipeRadius), pipeSlices, pipeStacks);
 	glPopMatrix();
 
 	glPopMatrix();
@@ -191,7 +187,7 @@ void drawBase() {
 	glTranslatef(0.0f, -(sphereDiameter / 2 + baseDistance + baseY / 2), 0.0f);
 
 	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, textureId);
+	glBindTexture(GL_TEXTURE_2D, woodTextureId);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -199,27 +195,27 @@ void drawBase() {
 
 	glBegin(GL_QUADS);
 
-	//Upper
+	//Up
 	glNormal3f(0.0, 1.0f, 0.0f);
 	glTexCoord2f(0.0f, 0.0f); glVertex3f(-baseX / 2, baseY / 2, baseZ / 2);
 	glTexCoord2f(1.0f, 0.0f); glVertex3f(baseX / 2, baseY / 2, baseZ / 2);
 	glTexCoord2f(1.0f, 1.0f); glVertex3f(baseX / 2, baseY / 2, -baseZ / 2);
 	glTexCoord2f(0.0f, 1.0f); glVertex3f(-baseX / 2, baseY / 2, -baseZ / 2);
 
-	//Under
+	//Bottom
 	glNormal3f(0.0, -1.0f, 0.0f);
 	glTexCoord2f(0.0f, 0.0f); glVertex3f(-baseX / 2, -baseY / 2, baseZ / 2);
 	glTexCoord2f(1.0f, 0.0f); glVertex3f(baseX / 2, -baseY / 2, baseZ / 2);
 	glTexCoord2f(1.0f, 1.0f); glVertex3f(baseX / 2, -baseY / 2, -baseZ / 2);
 	glTexCoord2f(0.0f, 1.0f); glVertex3f(-baseX / 2, -baseY / 2, -baseZ / 2);
-	
+
 	//Left
 	glNormal3f(-1.0, 0.0f, 0.0f);
 	glTexCoord2f(0.0f, 0.0f); glVertex3f(-baseX / 2, -baseY / 2, -baseZ / 2);
 	glTexCoord2f(1.0f, 0.0f); glVertex3f(-baseX / 2, -baseY / 2, baseZ / 2);
 	glTexCoord2f(1.0f, 1.0f); glVertex3f(-baseX / 2, baseY / 2, baseZ / 2);
 	glTexCoord2f(0.0f, 1.0f); glVertex3f(-baseX / 2, baseY / 2, -baseZ / 2);
-	
+
 	//Right
 	glNormal3f(-1.0, 0.0f, 0.0f);
 	glTexCoord2f(0.0f, 0.0f); glVertex3f(baseX / 2, -baseY / 2, -baseZ / 2);
@@ -234,7 +230,7 @@ void drawBase() {
 	glTexCoord2f(1.0f, 1.0f); glVertex3f(baseX / 2, baseY / 2, baseZ / 2);
 	glTexCoord2f(0.0f, 1.0f); glVertex3f(-baseX / 2, baseY / 2, baseZ / 2);
 	
-	//Upper
+	//Rear
 	glNormal3f(0.0, 0.0f, 1.0f);
 	glTexCoord2f(0.0f, 0.0f); glVertex3f(-baseX / 2, -baseY / 2, -baseZ / 2);
 	glTexCoord2f(1.0f, 0.0f); glVertex3f(baseX / 2, -baseY / 2, -baseZ / 2);
@@ -256,9 +252,7 @@ void displayFunc() {
 	GLfloat ambientLight[] = { 0.1f, 0.1f, 0.1f, 1.0f };
 	GLfloat diffuseLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	GLfloat specularLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	GLfloat lightPos[] = { -cameraX + pipeX, -cameraY + pipeY, -cameraZ + pipeZ, 1.0f };
 
-	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 	glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
 	glLightfv(GL_LIGHT0, GL_SPECULAR, specularLight);
@@ -329,8 +323,9 @@ void timerFunc(int value) {
 
 int main(int argc, char** argv) {
 	glutInit(&argc, argv);
+
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-	glutInitWindowSize(800, 600);
+	glutInitWindowSize(800, 800);
 
 	glutCreateWindow("Newton's cradle");
 
@@ -341,14 +336,12 @@ int main(int argc, char** argv) {
 	glEnable(GL_COLOR_MATERIAL);
 	glShadeModel(GL_SMOOTH);
 
-	quadratic = gluNewQuadric();
+	gobj = gluNewQuadric();
 
-	gluQuadricNormals(quadratic, GLU_SMOOTH);
-	gluQuadricTexture(quadratic, GL_TRUE);
+	gluQuadricNormals(gobj, GLU_SMOOTH);
+	gluQuadricTexture(gobj, GL_TRUE);
 
-	Image* image = loadBMP("wood.bmp");
-	textureId = loadTexture(image);
-	delete image;
+	woodTextureId = loadTexture(loadBMP("wood.bmp"));
 
 	glutDisplayFunc(displayFunc);
 	glutReshapeFunc(reshapeFunc);
@@ -356,5 +349,6 @@ int main(int argc, char** argv) {
 	glutTimerFunc(millis, timerFunc, 0);
 
 	glutMainLoop();
+
 	return 0;
 }
