@@ -9,14 +9,11 @@
 GLUquadricObj* gobj;
 GLuint woodTextureId;
 
-float angle = 45.0;
-float freq = 1000 / 50; // Частота смены кадров (млс)
-
 float sphereDiameter = 1.0;
 float sphereCube = 0.125;
 
 float baseX = 7.5;
-float baseY = 0.8;
+float baseY = 0.75;
 float baseZ = 5.5;
 float baseDistance = 1.0;
 
@@ -25,14 +22,23 @@ float pipeX = 6.5;
 float pipeY = 5.0;
 float pipeZ = 4.5;
 
-float wireLength = pipeY - pipeRadius - baseDistance - sphereDiameter - sphereCube / 2;
-
 float cameraX = 0.0;
 float cameraY = 0.5;
 float cameraZ = 15.0;
-float cameraRotationX = 6.0;
-float cameraRotationY = 40.0;
+float cameraRotationX = 5.0;
+float cameraRotationY = 45.0;
 float cameraRotationZ = 0.0;
+
+float wireLength = pipeY - pipeRadius - baseDistance - sphereDiameter - sphereCube / 2;
+
+float angle = 45.0;                          // Угол отклонения
+float freq = 1000 / 50;                      // Частота смены кадров (млс)
+float A = wireLength;                        // Амплитуда колебаний, максимальное отклонение груза (м)
+float T = 2 * M_PI * sqrt(wireLength / 9.8); // Период колебаний (с)
+float v = 1 / T;                             // Частота колебаний (Гц)
+float omega = 2 * M_PI * v;                  // Циклическая частота колебаний (рад/с)
+float fi0 = M_PI / 4;                        // Начальная фаза колебания (рад)
+float t = 0;                                 // Время (c)
 
 GLuint loadTexture(Image* image) {
 	GLuint woodTextureId;
@@ -52,23 +58,11 @@ void drawSphere(float angle) {
 
 	glColor3f(0.675f, 0.675f, 0.750f);
 
-	GLfloat ambient[] = { 0.0, 0.0, 0.0, 0.0 };
-	GLfloat diffuse[] = { 0.5, 0.5, 0.5, 1.0 };
-	GLfloat specular[] = { 1.0, 1.0, 1.0, 1.0 };
-	GLfloat shininess[] = { 300.0 };
-
-	glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
-	glMaterialfv(GL_FRONT, GL_SHININESS, shininess);
-
 	glutSolidCube(sphereCube);
 
 	glPushMatrix();
-
 	glTranslatef(0.0f, -(sphereDiameter / 2), 0.0f);
-	glutSolidSphere(sphereDiameter / 2, 20, 20);
-
+	glutSolidSphere(sphereDiameter / 2, 100, 100);
 	glPopMatrix();
 
 	glRotatef(-angle, 0.0f, 0.0f, 1.0f);
@@ -77,12 +71,11 @@ void drawSphere(float angle) {
 	float y = cos(angle * M_PI / 180) * wireLength;
 	float z = pipeZ / 2 - pipeRadius;
 
-	glColor3f(0.72f, 0.54f, 0.0f);
-	glBegin(GL_LINES);
+	glColor3f(1.0f, 1.0f, 1.0f);
 
+	glBegin(GL_LINES);
 	glVertex3f(0.0f, 0.0f, 0.0f);
 	glVertex3f(-x, y, -z);
-
 	glVertex3f(0.0f, 0.0f, 0.0f);
 	glVertex3f(-x, y, z);
 	glEnd();
@@ -98,12 +91,9 @@ void drawSpheres() {
 		glPushMatrix();
 		glTranslatef(-5 / 2.0f - sphereDiameter / 2.0f + i * sphereDiameter, 0.0f, 0.0f);
 
-		if (i == 1 && angle < 0 || i == 5 && angle > 0) {
-			drawSphere(angle);
-		}
-		else {
-			drawSphere(0);
-		}
+		(i == 1 && angle < 0 || i == 5 && angle > 0)
+			? drawSphere(angle)
+			: drawSphere(0);
 
 		glPopMatrix();
 	}
@@ -117,56 +107,50 @@ void drawPipes() {
 
 	glColor3f(0.675f, 0.675f, 0.750f);
 
-	GLfloat ambient[] = { 0.0, 0.0, 0.0, 0.0 };
-	GLfloat diffuse[] = { 0.5, 0.5, 0.5, 1.0 };
-	GLfloat specular[] = { 1.0, 1.0, 1.0, 1.0 };
-	GLfloat shininess[] = { 300.0 };
-
-	glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
-	glMaterialfv(GL_FRONT, GL_SHININESS, shininess);
-
 	//Top Front
 	glPushMatrix();
-	glTranslatef(-pipeX / 2, pipeY / 2 - pipeRadius, pipeZ / 2 - pipeRadius);
+	glTranslatef(-pipeX / 2 + pipeRadius, pipeY / 2 - pipeRadius, pipeZ / 2 - pipeRadius);
 	glRotatef(90.0f, 0.0f, 1.0f, 0.0f);
-	gluCylinder(gobj, pipeRadius, pipeRadius, pipeX, 32, 32);
+	gluCylinder(gobj, pipeRadius, pipeRadius, pipeX - pipeRadius * 2.0, 50, 50);
 	glPopMatrix();
 
 	//Top Rear
 	glPushMatrix();
-	glTranslatef(-pipeX / 2, pipeY / 2 - pipeRadius, -(pipeZ / 2 - pipeRadius));
+	glTranslatef(-pipeX / 2 + pipeRadius, pipeY / 2 - pipeRadius, -(pipeZ / 2 - pipeRadius));
 	glRotatef(90.0f, 0.0f, 1.0f, 0.0f);
-	gluCylinder(gobj, pipeRadius, pipeRadius, pipeX, 32, 32);
+	gluCylinder(gobj, pipeRadius, pipeRadius, pipeX - pipeRadius * 2.0, 50, 50);
 	glPopMatrix();
 
 	//Left Front
 	glPushMatrix();
 	glTranslatef(-(pipeX / 2 - pipeRadius), pipeY / 2 - pipeRadius, pipeZ / 2 - pipeRadius);
 	glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-	gluCylinder(gobj, pipeRadius, pipeRadius, GLfloat(pipeY - pipeRadius), 32, 32);
+	gluCylinder(gobj, pipeRadius, pipeRadius, GLdouble(pipeY) - pipeRadius, 50, 50);
+	glutSolidSphere(pipeRadius, 20, 20);
 	glPopMatrix();
 
 	//Left Rear
 	glPushMatrix();
 	glTranslatef(-(pipeX / 2 - pipeRadius), pipeY / 2 - pipeRadius, -(pipeZ / 2 - pipeRadius));
 	glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-	gluCylinder(gobj, pipeRadius, pipeRadius, GLfloat(pipeY - pipeRadius), 32, 32);
+	gluCylinder(gobj, pipeRadius, pipeRadius, GLdouble(pipeY) - pipeRadius, 50, 50);
+	glutSolidSphere(pipeRadius, 20, 20);
 	glPopMatrix();
 
 	//Right Front
 	glPushMatrix();
 	glTranslatef((pipeX / 2 - pipeRadius), pipeY / 2 - pipeRadius, pipeZ / 2 - pipeRadius);
 	glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-	gluCylinder(gobj, pipeRadius, pipeRadius, GLfloat(pipeY - pipeRadius), 32, 32);
+	gluCylinder(gobj, pipeRadius, pipeRadius, GLdouble(pipeY) - pipeRadius, 50, 50);
+	glutSolidSphere(pipeRadius, 20, 20);
 	glPopMatrix();
 
 	//Right Rear
 	glPushMatrix();
 	glTranslatef((pipeX / 2 - pipeRadius), pipeY / 2 - pipeRadius, -(pipeZ / 2 - pipeRadius));
 	glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-	gluCylinder(gobj, pipeRadius, pipeRadius, GLfloat(pipeY - pipeRadius), 32, 32);
+	gluCylinder(gobj, pipeRadius, pipeRadius, GLdouble(pipeY) - pipeRadius, 50, 50);
+	glutSolidSphere(pipeRadius, 20, 20);
 	glPopMatrix();
 
 	glPopMatrix();
@@ -228,6 +212,7 @@ void drawBase() {
 	glTexCoord2f(0.0f, 1.0f); glVertex3f(-baseX / 2, baseY / 2, -baseZ / 2);
 
 	glEnd();
+
 	glDisable(GL_TEXTURE_2D);
 	glPopMatrix();
 }
@@ -239,6 +224,11 @@ void displayFunc() {
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
+	glTranslatef(-cameraX, -cameraY, -cameraZ);
+	glRotatef(cameraRotationX, 1.0, 0.0, 0.0);
+	glRotatef(cameraRotationY, 0.0, 1.0, 0.0);
+	glRotatef(cameraRotationZ, 0.0, 0.0, 1.0);
+
 	GLfloat ambientLight[] = { 0.1f, 0.1f, 0.1f, 1.0f };
 	GLfloat diffuseLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	GLfloat specularLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -247,10 +237,15 @@ void displayFunc() {
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
 	glLightfv(GL_LIGHT0, GL_SPECULAR, specularLight);
 
-	glTranslatef(-cameraX, -cameraY, -cameraZ);
-	glRotatef(cameraRotationX, 1.0, 0.0, 0.0);
-	glRotatef(cameraRotationY, 0.0, 1.0, 0.0);
-	glRotatef(cameraRotationZ, 0.0, 0.0, 1.0);
+	GLfloat ambientMaterial[] = { 0.25, 0.25, 0.25, 0.25 };
+	GLfloat diffuseMaterial[] = { 0.25, 0.25, 0.25, 0.25 };
+	GLfloat specularMaterial[] = { 0.25, 0.25, 0.25, 0.25 };
+	GLfloat shininessMaterial[] = { 25.0 };
+
+	glMaterialfv(GL_FRONT, GL_AMBIENT, ambientMaterial);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuseMaterial);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, specularMaterial);
+	glMaterialfv(GL_FRONT, GL_SHININESS, shininessMaterial);
 
 	drawBase();
 	drawPipes();
@@ -289,21 +284,13 @@ void specialFunc(int key, int x, int y) {
 	}
 }
 
-float A = wireLength; // Амплитуда колебаний, максимальное отклонение груза (м)
-float T = 2 * M_PI * sqrt(wireLength / 9.8); // Период колебаний (с)
-float v = 1 / T; // Частота колебаний (Гц)
-float omega = 2 * M_PI * v; // Циклическая частота колебаний (рад/с)
-float fi0 = M_PI / 4; // Начальная фаза колебания (рад)
-float t = 0; // Время (c)
-
 void timerFunc(int value) {
-	float x = A * cos(omega * t + fi0); // Координата, смещение груза от положения равновесия 
-	float c = sqrt(wireLength * wireLength + x * x); // Пользуясь теоремой косинусов
+	float x = A * cos(omega * t + fi0);                                            // Координата, смещение груза от положения равновесия 
+	float c = sqrt(wireLength * wireLength + x * x);                               // Пользуясь теоремой косинусов
 	float cosA = (x * x + c * c - wireLength * wireLength) / (2 * x * wireLength);
 	float angleA = cosA * (180 / M_PI);
 
 	angle = angleA;
-
 	t += freq / 1000;
 
 	glutPostRedisplay();
