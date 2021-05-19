@@ -9,10 +9,8 @@
 GLUquadricObj* gobj;
 GLuint woodTextureId;
 
-float angle = -50;
-float maxAngle = 50;        
-float maxIncrement = 6.5;   
-bool clockwise = false;
+float angle = 45.0;
+float freq = 1000 / 50; // Частота смены кадров (млс)
 
 float sphereDiameter = 1.0;
 float sphereCube = 0.125;
@@ -291,26 +289,25 @@ void specialFunc(int key, int x, int y) {
 	}
 }
 
+float A = wireLength; // Амплитуда колебаний, максимальное отклонение груза (м)
+float T = 2 * M_PI * sqrt(wireLength / 9.8); // Период колебаний (с)
+float v = 1 / T; // Частота колебаний (Гц)
+float omega = 2 * M_PI * v; // Циклическая частота колебаний (рад/с)
+float fi0 = M_PI / 4; // Начальная фаза колебания (рад)
+float t = 0; // Время (c)
+
 void timerFunc(int value) {
-	float increment = maxIncrement - (abs(angle) / maxAngle * maxIncrement * 0.85);
+	float x = A * cos(omega * t + fi0); // Координата, смещение груза от положения равновесия 
+	float c = sqrt(wireLength * wireLength + x * x); // Пользуясь теоремой косинусов
+	float cosA = (x * x + c * c - wireLength * wireLength) / (2 * x * wireLength);
+	float angleA = cosA * (180 / M_PI);
 
-	if (clockwise) {
-		if (angle <= -maxAngle) {
-			clockwise = false;
-		}
-	}
-	else {
-		if (angle >= maxAngle) {
-			clockwise = true;
-		}
-	}
+	angle = angleA;
 
-	clockwise
-		? angle -= increment
-		: angle += increment;
+	t += freq / 1000;
 
 	glutPostRedisplay();
-	glutTimerFunc(20, timerFunc, 0);
+	glutTimerFunc(freq, timerFunc, 0);
 }
 
 int main(int argc, char** argv) {
@@ -338,7 +335,7 @@ int main(int argc, char** argv) {
 	glutDisplayFunc(displayFunc);
 	glutReshapeFunc(reshapeFunc);
 	glutSpecialFunc(specialFunc);
-	glutTimerFunc(20, timerFunc, 0);
+	glutTimerFunc(freq, timerFunc, 0);
 
 	glutMainLoop();
 
