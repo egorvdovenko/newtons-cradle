@@ -9,7 +9,7 @@
 GLUquadricObj* gobj;
 GLuint woodTextureId;
 
-const float SPHERE_D = 1.0;
+const float SPHERE_RADIUS = 0.5;
 const float SPHERE_CUBE_SIZE = 0.125;
 
 const float BASE_X = 7.5;
@@ -26,7 +26,7 @@ const float CAMERA_X = 0.0;
 const float CAMERA_Y = 0.5;
 const float CAMERA_Z = 15.0;
 
-const float WIRE_L = TUBE_Y - TUBE_RADIUS - BASE_DISTANCE - SPHERE_D - SPHERE_CUBE_SIZE / 2;
+const float WIRE_L = TUBE_Y - TUBE_RADIUS - BASE_DISTANCE - SPHERE_RADIUS * 2 - SPHERE_CUBE_SIZE / 2;
 
 float cameraRotationX = 5.0;
 float cameraRotationY = 45.0;
@@ -51,6 +51,26 @@ GLuint loadTexture(Image* image) {
 	return woodTextureId;
 }
 
+void drawAxios() {
+	glColor3f(1.0, 0.0, 0.0);
+	glBegin(GL_LINES);
+	glVertex3f(-800.0, 0.0, 0.0);
+	glVertex3f(800.0, 0.0, 0.0);
+	glEnd();
+
+	glColor3f(0.0, 1.0, 0.0);
+	glBegin(GL_LINES);
+	glVertex3f(0.0, -800.0, 0.0);
+	glVertex3f(0.0, 800.0, 0.0);
+	glEnd();
+
+	glColor3f(0.0, 0.0, 1.0);
+	glBegin(GL_LINES);
+	glVertex3f(0.0, 0.0, -800.0);
+	glVertex3f(0.0, 0.0, 800.0);
+	glEnd();
+}
+
 void drawSphere(float angle) {
 	glPushMatrix();
 
@@ -63,8 +83,8 @@ void drawSphere(float angle) {
 
 	glPushMatrix();
 
-	glTranslatef(0.0f, -(SPHERE_D / 2), 0.0f);
-	glutSolidSphere(SPHERE_D / 2, 100, 100);
+	glTranslatef(0.0f, -SPHERE_RADIUS, 0.0f);
+	glutSolidSphere(SPHERE_RADIUS, 100, 100);
 
 	glPopMatrix();
 
@@ -100,7 +120,7 @@ void drawWire(float angle) {
 
 void drawTubes() {
 	glPushMatrix();
-	glTranslatef(0.0f, TUBE_Y / 2 - SPHERE_D / 2 - BASE_DISTANCE, 0.0f);
+	glTranslatef(0.0f, TUBE_Y / 2 - SPHERE_RADIUS - BASE_DISTANCE, 0.0f);
 
 	glColor3f(0.675f, 0.675f, 0.750f);
 
@@ -155,7 +175,7 @@ void drawTubes() {
 
 void drawBase() {
 	glPushMatrix();
-	glTranslatef(0.0f, -(SPHERE_D / 2 + BASE_DISTANCE + BASE_Y / 2), 0.0f);
+	glTranslatef(0.0f, -(SPHERE_RADIUS + BASE_DISTANCE + BASE_Y / 2), 0.0f);
 
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, woodTextureId);
@@ -238,26 +258,6 @@ void drawBase() {
 	glPopMatrix();
 }
 
-void drawAxios() {
-	glColor3f(1.0, 0.0, 0.0);
-	glBegin(GL_LINES);
-	glVertex3f(-800.0, 0.0, 0.0);
-	glVertex3f(800.0, 0.0, 0.0);
-	glEnd();
-
-	glColor3f(0.0, 1.0, 0.0);
-	glBegin(GL_LINES);
-	glVertex3f(0.0, -800.0, 0.0);
-	glVertex3f(0.0, 800.0, 0.0);
-	glEnd();
-
-	glColor3f(0.0, 0.0, 1.0);
-	glBegin(GL_LINES);
-	glVertex3f(0.0, 0.0, -800.0);
-	glVertex3f(0.0, 0.0, 800.0);
-	glEnd();
-}
-
 void displayFunc() {
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -270,50 +270,33 @@ void displayFunc() {
 	glRotatef(cameraRotationY, 0.0, 1.0, 0.0);
 	glRotatef(cameraRotationZ, 0.0, 0.0, 1.0);
 
-	GLfloat ambientLight[] = { 0.1f, 0.1f, 0.1f, 1.0f };
-	GLfloat diffuseLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	GLfloat specularLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-	glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
-	glLightfv(GL_LIGHT0, GL_SPECULAR, specularLight);
 
-	GLfloat ambientMaterial[] = { 0.25, 0.25, 0.25, 0.25 };
-	GLfloat diffuseMaterial[] = { 0.25, 0.25, 0.25, 0.25 };
-	GLfloat specularMaterial[] = { 0.25, 0.25, 0.25, 0.25 };
-	GLfloat shininessMaterial[] = { 25.0 };
-
-	glMaterialfv(GL_FRONT, GL_AMBIENT, ambientMaterial);
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuseMaterial);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, specularMaterial);
-	glMaterialfv(GL_FRONT, GL_SHININESS, shininessMaterial);
-
-	drawAxios();
 	drawBase();
 	drawTubes();
 
-	//glPushMatrix();
+	glPushMatrix();
 
-	//glTranslatef(0.0f, TUBE_Y - TUBE_RADIUS - BASE_DISTANCE - SPHERE_D / 2.0f, 0.0f);
+	glTranslatef(0.0f, TUBE_Y - TUBE_RADIUS - BASE_DISTANCE - SPHERE_RADIUS, 0.0f);
 
-	//for (int i = 1; i <= 5; i++) {
-	//	glPushMatrix();
+	for (int i = 1; i <= 5; i++) {
+		glPushMatrix();
 
-	//	glTranslatef(-5 / 2.0f - SPHERE_D / 2.0f + i * SPHERE_D, 0.0f, 0.0f);
+		glTranslatef(-5 / 2.0f - SPHERE_RADIUS + i * SPHERE_RADIUS * 2.0f, 0.0f, 0.0f);
 
-	//	if (i == 1 && angle < 0 || i == 5 && angle > 0) {
-	//		drawWire(angle);
-	//		drawSphere(angle);
-	//	}
-	//	else {
-	//		drawWire(0);
-	//		drawSphere(0);
-	//	}
+		if (i == 1 && angle < 0 || i == 5 && angle > 0) {
+			drawWire(angle);
+			drawSphere(angle);
+		}
+		else {
+			drawWire(0);
+			drawSphere(0);
+		}
 
-	//	glPopMatrix();
-	//}
+		glPopMatrix();
+	}
 
-	//glPopMatrix();
+	glPopMatrix();
 
 	glutSwapBuffers();
 }
@@ -382,6 +365,24 @@ int main(int argc, char** argv) {
 	gluQuadricTexture(gobj, GL_TRUE);
 
 	woodTextureId = loadTexture(loadBMP("wood.bmp"));
+
+	GLfloat ambientLight[] = { 0.1f, 0.1f, 0.1f, 1.0f };
+	GLfloat diffuseLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	GLfloat specularLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+	glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, specularLight);
+
+	GLfloat ambientMaterial[] = { 0.25, 0.25, 0.25, 0.25 };
+	GLfloat diffuseMaterial[] = { 0.25, 0.25, 0.25, 0.25 };
+	GLfloat specularMaterial[] = { 0.25, 0.25, 0.25, 0.25 };
+	GLfloat shininessMaterial[] = { 25.0 };
+
+	glMaterialfv(GL_FRONT, GL_AMBIENT, ambientMaterial);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuseMaterial);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, specularMaterial);
+	glMaterialfv(GL_FRONT, GL_SHININESS, shininessMaterial);
 
 	glutDisplayFunc(displayFunc);
 	glutReshapeFunc(reshapeFunc);
