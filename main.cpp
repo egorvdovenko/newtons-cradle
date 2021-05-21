@@ -26,20 +26,20 @@ const float CAMERA_X = 0.0;
 const float CAMERA_Y = 0.5;
 const float CAMERA_Z = 15.0;
 
-const float WIRE_L = TUBE_Y - TUBE_RADIUS - BASE_DISTANCE - SPHERE_RADIUS * 2 - SPHERE_CUBE_SIZE / 2;
+const float WIRE_LENGTH = TUBE_Y - TUBE_RADIUS - BASE_DISTANCE - SPHERE_RADIUS * 2 - SPHERE_CUBE_SIZE / 2;
 
 float cameraRotationX = 5.0;
 float cameraRotationY = 45.0;
 float cameraRotationZ = 0.0;
 
-float angle = 45.0;                      // Угол отклонения
-float freq = 1000 / 50;                  // Частота смены кадров (млс)
-float A = WIRE_L;                        // Амплитуда колебаний, максимальное отклонение груза (м)
-float T = 2 * M_PI * sqrt(WIRE_L / 9.8); // Период колебаний (с)
-float v = 1 / T;                         // Частота колебаний (Гц)
-float omega = 2 * M_PI * v;              // Циклическая частота колебаний (рад/с)
-float fi0 = M_PI / 4;                    // Начальная фаза колебания (рад)
-float t = 0;                             // Время (c)
+float angle = 45.0;                           // Угол отклонения
+float freq = 1000 / 50;                       // Частота смены кадров (млс)
+float A = WIRE_LENGTH;                        // Амплитуда колебаний, максимальное отклонение груза (м)
+float T = 2 * M_PI * sqrt(WIRE_LENGTH / 9.8); // Период колебаний (с)
+float v = 1 / T;                              // Частота колебаний (Гц)
+float omega = 2 * M_PI * v;                   // Циклическая частота колебаний (рад/с)
+float fi0 = M_PI / 4;                         // Начальная фаза колебания (рад)
+float t = 0;                                  // Время (c)
 
 GLuint loadTexture(Image* image) {
 	GLuint woodTextureId;
@@ -75,7 +75,7 @@ void drawSphere(float angle) {
 	glPushMatrix();
 
 	glRotatef(angle, 0.0f, 0.0f, 1.0f);
-	glTranslatef(0.0f, -WIRE_L, 0.0f);
+	glTranslatef(0.0f, -WIRE_LENGTH, 0.0f);
 
 	glColor3f(0.675f, 0.675f, 0.750f);
 
@@ -88,8 +88,6 @@ void drawSphere(float angle) {
 
 	glPopMatrix();
 
-	glRotatef(-angle, 0.0f, 0.0f, 1.0f);
-
 	glPopMatrix();
 }
 
@@ -97,11 +95,11 @@ void drawWire(float angle) {
 	glPushMatrix();
 
 	glRotatef(angle, 0.0f, 0.0f, 1.0f);
-	glTranslatef(0.0f, -WIRE_L, 0.0f);
+	glTranslatef(0.0f, -WIRE_LENGTH, 0.0f);
 	glRotatef(-angle, 0.0f, 0.0f, 1.0f);
 
-	float x = sin(angle * M_PI / 180) * WIRE_L;
-	float y = cos(angle * M_PI / 180) * WIRE_L;
+	float x = WIRE_LENGTH * sin(angle * (M_PI / 180)); //Решение прямоугольных треугольников
+	float y = WIRE_LENGTH * cos(angle * (M_PI / 180)); //По гипотенузе и острому углу
 	float z = TUBE_Z / 2 - TUBE_RADIUS;
 
 	glColor3f(1.0f, 1.0f, 1.0f);
@@ -270,8 +268,6 @@ void displayFunc() {
 	glRotatef(cameraRotationY, 0.0, 1.0, 0.0);
 	glRotatef(cameraRotationZ, 0.0, 0.0, 1.0);
 
-
-
 	drawBase();
 	drawTubes();
 
@@ -332,9 +328,9 @@ void specialFunc(int key, int x, int y) {
 }
 
 void timerFunc(int value) {
-	float x = A * cos(omega * t + fi0);                                            // Координата, смещение груза от положения равновесия 
-	float c = sqrt(WIRE_L * WIRE_L + x * x);                               // Пользуясь теоремой косинусов
-	float cosA = (x * x + c * c - WIRE_L * WIRE_L) / (2 * x * WIRE_L);
+	float x = A * cos(omega * t + fi0);                                               // Координата, смещение груза от положения равновесия 
+	float c = sqrt(WIRE_LENGTH * WIRE_LENGTH + x * x);                                // Пользуясь теоремой косинусов
+	float cosA = (x * x + c * c - WIRE_LENGTH * WIRE_LENGTH) / (2 * x * WIRE_LENGTH);
 	float angleA = cosA * (180 / M_PI);
 
 	angle = angleA;
