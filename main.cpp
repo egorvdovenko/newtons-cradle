@@ -298,30 +298,28 @@ void displayFunc() {
 }
 
 void reshapeFunc(int w, int h) {
+	glViewport(0, 0, w, h);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(45.0, (float)w / (float)h, 1.0, 200.0);
-	glViewport(0, 0, w, h);
+	gluPerspective(45.0, w / h, 1.0, 200.0);
 }
 
 void specialFunc(int key, int x, int y) {
-	int increment = 2.0;
-
 	switch (key) {
 	case GLUT_KEY_RIGHT:
-		cameraRotationY += increment;
+		cameraRotationY += 1.0;
 		glutPostRedisplay();
 		break;
 	case GLUT_KEY_LEFT:
-		cameraRotationY -= increment;
+		cameraRotationY -= 1.0;
 		glutPostRedisplay();
 		break;
 	case GLUT_KEY_UP:
-		cameraRotationX -= increment;
+		cameraRotationX -= 1.0;
 		glutPostRedisplay();
 		break;
 	case GLUT_KEY_DOWN:
-		cameraRotationX += increment;
+		cameraRotationX += 1.0;
 		glutPostRedisplay();
 		break;
 	}
